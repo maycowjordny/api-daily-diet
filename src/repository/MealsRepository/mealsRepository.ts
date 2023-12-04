@@ -1,9 +1,5 @@
 import { randomUUID } from "crypto";
 import { knex } from "../../database";
-import {
-  MealSchemaType,
-  UserSchemaType,
-} from "../../routes/schemas/routes.schema";
 
 export class MealsRepository {
   async create(
@@ -12,14 +8,16 @@ export class MealsRepository {
     is_diet: boolean,
     user_id: string
   ) {
-    const response = await knex("meals").insert({
-      id: randomUUID(),
-      title,
-      description,
-      is_diet,
-      user_id,
-    });
-    return response;
+    const [response] = await knex("meals")
+      .insert({
+        id: randomUUID(),
+        title,
+        description,
+        is_diet,
+        user_id,
+      })
+      .returning("id");
+    return response.id;
   }
 
   async list(userID: string) {
@@ -80,15 +78,28 @@ export class MealsRepository {
       .count("is_diet", { as: "mealsOutOfDiet" })
       .first();
 
-    const [bestSequence] = await knex.raw(
-      "SELECT COUNT(PARTITION_MAX) AS BEST_SEQUENCE FROM (SELECT USER_ID, IS_DIET,ROW_NUMBER() OVER (ORDER BY CREATED_AT) - ROW_NUMBER() OVER (PARTITION BY IS_DIET ORDER BY CREATED_AT) AS PARTITION_MAX FROM MEALS) AS QUERY WHERE IS_DIET = 1 AND PARTITION_MAX = 1 AND QUERY.USER_ID = ?",
-      [userID]
-    );
+    const mealsList = await knex("meals")
+      .where("user_id", userID)
+      .orderBy("created_at")
+      .select("is_diet");
 
+    let bestSequence = 0;
+    let currentSequence = 0;
+
+    for (const meals of mealsList) {
+      if (meals.is_diet == true) {
+        bestSequence++;
+      } else {
+        bestSequence = Math.max(bestSequence, currentSequence);
+        currentSequence = 0;
+      }
+    }
+
+    bestSequence = Math.max(bestSequence, currentSequence);
     return {
       ...mealsInDiet,
       ...mealsOutOfDiet,
-      ...bestSequence,
+      bestSequence,
     };
   }
 }

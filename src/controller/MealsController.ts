@@ -15,9 +15,16 @@ export class MealsController {
 
       const cookie = UserIdSchema.parse(request.cookies);
 
-      await mealsRepository.create(title, description, is_diet, cookie.userID);
+      const mealsId = await mealsRepository.create(
+        title,
+        description,
+        is_diet,
+        cookie.userID
+      );
 
-      return reply.status(201).send({ message: "Meal created successfully" });
+      return reply
+        .status(201)
+        .send({ message: "Meal created successfully", mealsId });
     } catch (err: any) {
       return reply.status(500).send({ error: err.message });
     }

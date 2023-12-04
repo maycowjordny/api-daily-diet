@@ -18,6 +18,11 @@ describe("Meals routes", () => {
   });
 
   it("should be able to create a new meal when is_diet is true", async () => {
+    const RESPONSE_MESSAGE = {
+      message: "Meal created successfully",
+      mealsId: expect.any(String),
+    };
+
     const createUser = await request(app.server).post("/users").send({
       name: "teste",
       email: "teste@gmail.com",
@@ -25,7 +30,7 @@ describe("Meals routes", () => {
     });
     const [cookies] = createUser.get("Set-Cookie");
 
-    await request(app.server)
+    const response = await request(app.server)
       .post("/meals")
       .set("Cookie", cookies)
       .send({
@@ -34,9 +39,15 @@ describe("Meals routes", () => {
         is_diet: true,
       })
       .expect(201);
+
+    expect(response.body).toEqual(RESPONSE_MESSAGE);
   });
 
   it("should be able to create a new meal when is_diet is false", async () => {
+    const RESPONSE_MESSAGE = {
+      message: "Meal created successfully",
+      mealsId: expect.any(String),
+    };
     const createUser = await request(app.server).post("/users").send({
       name: "teste",
       email: "teste@gmail.com",
@@ -44,7 +55,7 @@ describe("Meals routes", () => {
     });
     const [cookies] = createUser.get("Set-Cookie");
 
-    await request(app.server)
+    const response = await request(app.server)
       .post("/meals")
       .set("Cookie", cookies)
       .send({
@@ -53,6 +64,8 @@ describe("Meals routes", () => {
         is_diet: false,
       })
       .expect(201);
+
+    expect(response.body).toEqual(RESPONSE_MESSAGE);
   });
 
   it("should be able to list all meals", async () => {
@@ -65,25 +78,18 @@ describe("Meals routes", () => {
     });
     const [cookies] = createUser.get("Set-Cookie");
 
-    await request(app.server)
-      .post("/meals")
-      .set("Cookie", cookies)
-      .send({
-        title: TITLE,
-        description: DESCRIPTION,
-        is_diet: false,
-      })
-      .expect(201);
+    await request(app.server).post("/meals").set("Cookie", cookies).send({
+      title: TITLE,
+      description: DESCRIPTION,
+      is_diet: false,
+    });
 
-    await request(app.server)
-      .post("/meals")
-      .set("Cookie", cookies)
-      .send({
-        title: "New meal",
-        description: "New description",
-        is_diet: true,
-      })
-      .expect(201);
+    await request(app.server).post("/meals").set("Cookie", cookies).send({
+      title: "New meal",
+      description: "New description",
+      is_diet: true,
+    });
+
     await request(app.server)
       .get("/meals")
       .set("Cookie", cookies)
@@ -102,22 +108,16 @@ describe("Meals routes", () => {
     });
     const [cookies] = createUser.get("Set-Cookie");
 
-    await request(app.server)
+    const meal = await request(app.server)
       .post("/meals")
       .set("Cookie", cookies)
       .send({
         title: TITLE,
         description: DESCRIPTION,
         is_diet: true,
-      })
-      .expect(201);
+      });
 
-    const meal = await request(app.server)
-      .get(`/meals`)
-      .set("Cookie", cookies)
-      .expect(200);
-
-    const mealsId = meal.body.meals[0].id;
+    const mealsId = meal.body.mealsId;
 
     await request(app.server)
       .get(`/meals/${mealsId}`)
@@ -139,22 +139,16 @@ describe("Meals routes", () => {
     });
     const [cookies] = createUser.get("Set-Cookie");
 
-    await request(app.server)
+    const meal = await request(app.server)
       .post("/meals")
       .set("Cookie", cookies)
       .send({
         title: TITLE,
         description: DESCRIPTION,
         is_diet: true,
-      })
-      .expect(201);
+      });
 
-    const mealList = await request(app.server)
-      .get(`/meals`)
-      .set("Cookie", cookies)
-      .expect(200);
-
-    const mealsId = mealList.body.meals[0].id;
+    const mealsId = meal.body.mealsId;
 
     await request(app.server)
       .put(`/meals/${mealsId}`)
@@ -178,22 +172,16 @@ describe("Meals routes", () => {
     });
     const [cookies] = createUser.get("Set-Cookie");
 
-    await request(app.server)
+    const meal = await request(app.server)
       .post("/meals")
       .set("Cookie", cookies)
       .send({
         title: TITLE,
         description: DESCRIPTION,
         is_diet: true,
-      })
-      .expect(201);
+      });
 
-    const mealList = await request(app.server)
-      .get(`/meals`)
-      .set("Cookie", cookies)
-      .expect(200);
-
-    const mealsId = mealList.body.meals[0].id;
+    const mealsId = meal.body.mealsId;
 
     await request(app.server)
       .delete(`/meals/${mealsId}`)
@@ -204,6 +192,7 @@ describe("Meals routes", () => {
   it("should be able to get meal metrics", async () => {
     const TITLE = "New meal";
     const DESCRIPTION = "New description";
+
     const createUser = await request(app.server).post("/users").send({
       name: "teste",
       email: "teste@gmail.com",
@@ -211,30 +200,22 @@ describe("Meals routes", () => {
     });
     const [cookies] = createUser.get("Set-Cookie");
 
-    await request(app.server)
-      .post("/meals")
-      .set("Cookie", cookies)
-      .send({
-        title: TITLE,
-        description: DESCRIPTION,
-        is_diet: true,
-      })
-      .expect(201);
+    await request(app.server).post("/meals").set("Cookie", cookies).send({
+      title: TITLE,
+      description: DESCRIPTION,
+      is_diet: true,
+    });
 
-    await request(app.server)
-      .post("/meals")
-      .set("Cookie", cookies)
-      .send({
-        title: TITLE,
-        description: DESCRIPTION,
-        is_diet: false,
-      })
-      .expect(201);
+    await request(app.server).post("/meals").set("Cookie", cookies).send({
+      title: TITLE,
+      description: DESCRIPTION,
+      is_diet: false,
+    });
 
-    await request(app.server).get(`/meals`).set("Cookie", cookies).expect(200);
+    await request(app.server).get(`/meals`).set("Cookie", cookies);
 
-    await request(app.server)
-      .get("meals/metrics")
+    const metric = await request(app.server)
+      .get("/meals/metrics")
       .set("Cookie", cookies)
       .expect(200);
   });
